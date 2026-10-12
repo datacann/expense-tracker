@@ -1,5 +1,6 @@
 # Git Ignore
 node_modules/
+.venv/
 .expo/
 dist/
 build/

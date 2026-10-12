@@ -1,6 +1,7 @@
 import { Expense } from '../types/expense';
 import { ReceiptAnalysis } from '../types/receipt';
 import { validateReceiptDraft } from '../utils/validateReceiptDraft';
+import { isValidCalendarDate } from '../utils/localDate';
 
 export type ReceiptSaveResult =
   | { status: 'saved'; expense: Expense }
@@ -10,6 +11,7 @@ export type ReceiptSaveResult =
 interface ReceiptSaveDependencies {
   addExpense: (expense: Expense) => Promise<void>;
   navigateToExpense: (expenseId: string) => void;
+  cleanupReceiptFile: (uri: string | undefined | null) => Promise<void>;
   createId: () => string;
   now: () => Date;
 }
@@ -17,8 +19,15 @@ interface ReceiptSaveDependencies {
 export const saveReceiptAnalysis = async (
   analysis: ReceiptAnalysis,
   dependencies: ReceiptSaveDependencies,
+  receiptUri?: string,
+  expenseId?: string,
+  missingTotalConfirmed = false,
 ): Promise<ReceiptSaveResult> => {
-  const validation = validateReceiptDraft(analysis.items, analysis.totalMinor);
+  const validation = validateReceiptDraft(
+    analysis.items,
+    analysis.totalMinor,
+    missingTotalConfirmed,
+  );
   if (!validation.isValid) {
     return {
       status: 'invalid',
@@ -28,13 +37,13 @@ export const saveReceiptAnalysis = async (
     };
   }
 
-  if (!analysis.date) {
-    return { status: 'invalid', message: 'Fiş tarihi bulunamadı.' };
+  if (!analysis.date || !isValidCalendarDate(analysis.date)) {
+    return { status: 'invalid', message: 'Geçerli bir fiş tarihi girin (YYYY-AA-GG).' };
   }
 
   const now = dependencies.now().toISOString();
   const expense: Expense = {
-    id: dependencies.createId(),
+    id: expenseId || dependencies.createId(),
     merchant: analysis.merchant ?? undefined,
     isSample: analysis.isSample,
     date: analysis.date,
@@ -54,6 +63,12 @@ export const saveReceiptAnalysis = async (
     await dependencies.addExpense(expense);
   } catch {
     return { status: 'storage-error', message: 'Fiş kaydedilemedi. Taslağınız korunuyor; tekrar deneyebilirsiniz.' };
+  }
+
+  try {
+    await dependencies.cleanupReceiptFile(receiptUri);
+  } catch (e) {
+    console.error('Fotoğraf temizleme hatası (kayıt başarılı):', e);
   }
 
   dependencies.navigateToExpense(expense.id);

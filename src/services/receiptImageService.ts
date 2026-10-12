@@ -1,6 +1,8 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Directory, File, Paths } from 'expo-file-system';
 import { isReceiptCacheFile } from '../utils/receiptFileOwnership';
+import { Alert, Linking } from 'react-native';
+import { resolvePermissionAction } from './receiptPermission';
 
 const getReceiptsDirectory = () => new Directory(Paths.cache, 'receipts');
 
@@ -18,6 +20,17 @@ const copyToReceiptCache = async (sourceUri: string): Promise<string> => {
   return destination.uri;
 };
 
+const handlePermissionDenied = async (permissionName: string) => {
+  Alert.alert(
+    'İzin Gerekli',
+    `${permissionName} erişimi reddedildi. Uygulamayı kullanabilmek için ayarlardan izin vermeniz gerekmektedir.`,
+    [
+      { text: 'Vazgeç', style: 'cancel' },
+      { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+    ]
+  );
+};
+
 export const pickImage = async (useCamera: boolean): Promise<string | null> => {
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -27,15 +40,57 @@ export const pickImage = async (useCamera: boolean): Promise<string | null> => {
   };
 
   if (useCamera) {
+    const { status, canAskAgain } = await ImagePicker.getCameraPermissionsAsync();
+
+    const permissionAction = resolvePermissionAction(status, canAskAgain);
+    if (permissionAction === 'launch') {
+      const result = await ImagePicker.launchCameraAsync(options);
+      return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    }
+
+    if (permissionAction === 'settings') {
+      await handlePermissionDenied('Kamera');
+      return null;
+    }
+
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) return null;
-    const result = await ImagePicker.launchCameraAsync(options);
-    return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    if (permission.granted) {
+      const result = await ImagePicker.launchCameraAsync(options);
+      return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    }
+
+    if (!permission.canAskAgain) {
+      await handlePermissionDenied('Kamera');
+    }
+    return null;
   } else {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return null;
-    const result = await ImagePicker.launchImageLibraryAsync(options);
-    return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    // MediaLibrary permissions are mostly not needed for launchImageLibraryAsync on modern Android/iOS
+    // unless you want to browse the full library with a custom UI. 
+    // launchImageLibraryAsync uses system picker which handles its own permissions.
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync(options);
+      return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    } catch (e) {
+      // Fallback for older versions or specific platform restrictions
+      const currentPermission = await ImagePicker.getMediaLibraryPermissionsAsync();
+      const permissionAction = resolvePermissionAction(
+        currentPermission.status,
+        currentPermission.canAskAgain,
+      );
+      if (permissionAction === 'settings') {
+        await handlePermissionDenied('Galeri');
+        return null;
+      }
+      const permission = permissionAction === 'request'
+        ? await ImagePicker.requestMediaLibraryPermissionsAsync()
+        : currentPermission;
+      if (!permission.granted) {
+        if (!permission.canAskAgain) await handlePermissionDenied('Galeri');
+        return null;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync(options);
+      return result.canceled ? null : copyToReceiptCache(result.assets[0].uri);
+    }
   }
 };
 

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { analyzeReceipt } from '../services/receiptAnalyzer';
+import { analyzeReceipt, ReceiptAnalysisError } from '../services/receiptAnalyzer';
 import { ReceiptAnalysis } from '../types/receipt';
 
 export const useReceiptAnalysis = () => {
@@ -8,18 +8,25 @@ export const useReceiptAnalysis = () => {
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
 
-  const startAnalysis = async (uri: string, useSample: boolean) => {
+  const startAnalysis = async (uri: string, useSample: boolean, signal?: AbortSignal) => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     setData(null);
+    
     try {
-      const result = await analyzeReceipt(uri, useSample);
-      if (requestId === requestIdRef.current) setData(result);
+      const result = await analyzeReceipt(uri, useSample, signal);
+      if (requestId === requestIdRef.current) {
+        setData(result);
+        setLoading(false);
+      }
     } catch (e: any) {
-      if (requestId === requestIdRef.current) setError(e.message);
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+        if (!(e instanceof ReceiptAnalysisError && e.code === 'CANCELLED')) {
+          setError(e.message || 'Bir hata oluştu');
+        }
+      }
     }
   };
 

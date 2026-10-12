@@ -1,75 +1,92 @@
-import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, ReactNode, useRef, useState } from 'react';
 import { Expense } from '../types/expense';
 import { expenseRepository } from '../storage/expenseRepository';
+import { ExpenseMutationStore } from '../storage/expenseMutationStore';
+import { limitRepository } from '../storage/limitRepository';
 
 interface State {
   expenses: Expense[];
   loading: boolean;
   error: string | null;
+  monthlyLimit: number | null;
 }
 
 type Action = 
-  | { type: 'LOAD_SUCCESS'; payload: Expense[] }
-  | { type: 'ADD_EXPENSE'; payload: Expense }
-  | { type: 'SET_ERROR'; payload: string };
+  | { type: 'LOAD_SUCCESS'; payload: { expenses: Expense[]; limit: number | null } }
+  | { type: 'EXPENSES_SUCCESS'; payload: Expense[] }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'UPDATE_LIMIT'; payload: number | null };
 
 const ExpenseContext = createContext<{ 
   state: State; 
   addExpense: (e: Expense) => Promise<void>;
   updateExpense: (id: string, e: Expense) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
+  setMonthlyLimit: (yearMonth: string, amount: number) => Promise<void>;
+  deleteMonthlyLimit: (yearMonth: string) => Promise<void>;
+  retryLoad: () => Promise<void>;
 } | undefined>(undefined);
 
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case 'LOAD_SUCCESS': return { ...state, expenses: action.payload, loading: false };
-    case 'ADD_EXPENSE': return { ...state, expenses: [...state.expenses, action.payload] };
+    case 'LOAD_SUCCESS': return { ...state, expenses: action.payload.expenses, monthlyLimit: action.payload.limit, loading: false };
+    case 'EXPENSES_SUCCESS': return { ...state, expenses: action.payload };
     case 'SET_ERROR': return { ...state, error: action.payload, loading: false };
+    case 'UPDATE_LIMIT': return { ...state, monthlyLimit: action.payload };
     default: return state;
   }
 };
 
 export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(reducer, { expenses: [], loading: true, error: null });
+  const [state, dispatch] = useReducer(reducer, { expenses: [], monthlyLimit: null, loading: true, error: null });
+  const mutationStore = useRef(new ExpenseMutationStore(expenseRepository)).current;
+  const isInitializing = useRef(true);
+
+  const loadAll = async (yearMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`) => {
+    dispatch({ type: 'SET_ERROR', payload: null });
+    try {
+      const expenses = await mutationStore.load();
+      const limit = await limitRepository.getLimit(yearMonth);
+      dispatch({ type: 'LOAD_SUCCESS', payload: { expenses, limit } });
+    } catch {
+      dispatch({ type: 'SET_ERROR', payload: 'Veriler yüklenirken hata oluştu' });
+    } finally {
+      isInitializing.current = false;
+    }
+  };
 
   useEffect(() => {
-    expenseRepository.getAll()
-      .then(expenses => dispatch({ type: 'LOAD_SUCCESS', payload: expenses }))
-      .catch(() => dispatch({ type: 'SET_ERROR', payload: 'Veriler yüklenirken hata oluştu' }));
+    const now = new Date();
+    loadAll(`${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`);
   }, []);
 
   const addExpense = async (expense: Expense) => {
-    try {
-      const newExpenses = [...state.expenses, expense];
-      await expenseRepository.saveAll(newExpenses);
-      dispatch({ type: 'ADD_EXPENSE', payload: expense });
-    } catch {
-      throw new Error('Harcama kaydedilemedi');
-    }
+    const expenses = await mutationStore.add(expense);
+    dispatch({ type: 'EXPENSES_SUCCESS', payload: expenses });
   };
 
   const updateExpense = async (id: string, updated: Expense) => {
-    try {
-      const newExpenses = state.expenses.map(e => e.id === id ? updated : e);
-      await expenseRepository.saveAll(newExpenses);
-      dispatch({ type: 'LOAD_SUCCESS', payload: newExpenses });
-    } catch {
-      throw new Error('Harcama güncellenemedi');
-    }
+    const expenses = await mutationStore.update(id, updated);
+    dispatch({ type: 'EXPENSES_SUCCESS', payload: expenses });
   };
 
   const deleteExpense = async (id: string) => {
-    try {
-      const newExpenses = state.expenses.filter(e => e.id !== id);
-      await expenseRepository.saveAll(newExpenses);
-      dispatch({ type: 'LOAD_SUCCESS', payload: newExpenses });
-    } catch {
-      throw new Error('Harcama silinemedi');
-    }
+    const expenses = await mutationStore.delete(id);
+    dispatch({ type: 'EXPENSES_SUCCESS', payload: expenses });
+  };
+
+  const setMonthlyLimit = async (yearMonth: string, amount: number) => {
+    await limitRepository.setLimit(yearMonth, amount);
+    dispatch({ type: 'UPDATE_LIMIT', payload: amount });
+  };
+
+  const deleteMonthlyLimit = async (yearMonth: string) => {
+    await limitRepository.removeLimit(yearMonth);
+    dispatch({ type: 'UPDATE_LIMIT', payload: null });
   };
 
   return (
-    <ExpenseContext.Provider value={{ state, addExpense, updateExpense, deleteExpense }}>
+    <ExpenseContext.Provider value={{ state, addExpense, updateExpense, deleteExpense, setMonthlyLimit, deleteMonthlyLimit, retryLoad: loadAll }}>
       {children}
     </ExpenseContext.Provider>
   );

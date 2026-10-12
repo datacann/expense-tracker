@@ -16,6 +16,12 @@ function test() {
     console.log(`Passed: ${input} -> ${result}`);
   });
 
+  ['', '-1', '0', 'abc', '12,345', '12.3.4'].forEach((input) => {
+    let rejected = false;
+    try { toMinorUnits(input); } catch { rejected = true; }
+    if (!rejected) throw new Error(`Invalid amount accepted: ${input}`);
+  });
+
   console.log('Testing formatCurrency...');
   const formatted = formatCurrency(12050);
   console.log(`Formatted 12050: ${formatted}`);

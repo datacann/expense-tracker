@@ -23,6 +23,7 @@ const testValidReceipt = async () => {
       await storageGate;
     },
     navigateToExpense: (id) => { navigatedTo = id; },
+    cleanupReceiptFile: async () => { /* no-op */ },
     createId: createIdFactory(),
     now: () => new Date('2026-10-02T12:00:00.000Z'),
   });
@@ -57,6 +58,7 @@ const testInvalidReceipt = async () => {
   const result = await saveReceiptAnalysis(invalid, {
     addExpense: async () => { storageCalls += 1; },
     navigateToExpense: () => { navigationCalls += 1; },
+    cleanupReceiptFile: async () => { /* no-op */ },
     createId: createIdFactory(),
     now: () => new Date('2026-10-02T12:00:00.000Z'),
   });
@@ -73,6 +75,7 @@ const testStorageFailure = async () => {
   const result = await saveReceiptAnalysis(sampleReceipt, {
     addExpense: async () => { throw new Error('storage failed'); },
     navigateToExpense: () => { navigationCalls += 1; },
+    cleanupReceiptFile: async () => { /* no-op */ },
     createId: createIdFactory(),
     now: () => new Date('2026-10-02T12:00:00.000Z'),
   });
@@ -82,12 +85,87 @@ const testStorageFailure = async () => {
   assert(JSON.stringify(sampleReceipt) === originalDraft, 'Depolama hatasında taslak değiştirildi');
 };
 
-const run = async () => {
-  await testValidReceipt();
-  await testInvalidReceipt();
-  await testStorageFailure();
-  console.log('Receipt save flow tests passed');
+const testMissingTotalConfirmation = async () => {
+  const withoutTotal: ReceiptAnalysis = { ...sampleReceipt, totalMinor: null };
+  let storageCalls = 0;
+  const dependencies = {
+    addExpense: async () => { storageCalls += 1; },
+    navigateToExpense: () => undefined,
+    cleanupReceiptFile: async () => undefined,
+    createId: createIdFactory(),
+    now: () => new Date('2026-10-02T12:00:00.000Z'),
+  };
+
+  const rejected = await saveReceiptAnalysis(withoutTotal, dependencies);
+  assert(rejected.status === 'invalid' && storageCalls === 0, 'Eksik toplam onaysız kaydedildi');
+  const confirmed = await saveReceiptAnalysis(withoutTotal, dependencies, undefined, undefined, true);
+  assert(confirmed.status === 'saved' && storageCalls === 1, 'Eksik toplam açık onayla kaydedilmedi');
 };
+
+const testInvalidDateDoesNotReachStorage = async () => {
+  let storageCalls = 0;
+  const result = await saveReceiptAnalysis({ ...sampleReceipt, date: '2026-02-30' }, {
+    addExpense: async () => { storageCalls += 1; },
+    navigateToExpense: () => undefined,
+    cleanupReceiptFile: async () => undefined,
+    createId: createIdFactory(),
+    now: () => new Date(),
+  });
+  assert(result.status === 'invalid' && storageCalls === 0, 'Geçersiz tarih depolamaya ulaştı');
+};
+
+  const testCleanupOnSuccess = async () => {
+    let cleanedUri: string | null = null;
+    const uri = 'cache://receipt-123.jpg';
+
+    await saveReceiptAnalysis(sampleReceipt, {
+      addExpense: async () => {},
+      navigateToExpense: () => {},
+      cleanupReceiptFile: async (u) => { cleanedUri = u || null; },
+      createId: createIdFactory(),
+      now: () => new Date(),
+    }, uri);
+
+    assert(cleanedUri === uri, 'Başarılı kayıt sonrası dosya temizlenmedi');
+  };
+
+  const testNoCleanupOnError = async () => {
+    let cleaned = false;
+    await saveReceiptAnalysis(sampleReceipt, {
+      addExpense: async () => { throw new Error(); },
+      navigateToExpense: () => {},
+      cleanupReceiptFile: async () => { cleaned = true; },
+      createId: createIdFactory(),
+      now: () => new Date(),
+    }, 'cache://uri.jpg');
+
+    assert(cleaned === false, 'Hata durumunda dosya temizlendi');
+  };
+
+  const testCleanupFailureDoesNotAffectSuccess = async () => {
+    let cleaned = false;
+    const result = await saveReceiptAnalysis(sampleReceipt, {
+      addExpense: async () => {},
+      navigateToExpense: () => {},
+      cleanupReceiptFile: async () => { throw new Error('Cleanup failed'); },
+      createId: createIdFactory(),
+      now: () => new Date(),
+    }, 'cache://uri.jpg');
+
+    assert(result.status === 'saved', 'Temizlik hatası başarılı kaydı engelledi');
+  };
+
+  const run = async () => {
+    await testValidReceipt();
+    await testInvalidReceipt();
+    await testStorageFailure();
+    await testMissingTotalConfirmation();
+    await testInvalidDateDoesNotReachStorage();
+    await testCleanupOnSuccess();
+    await testNoCleanupOnError();
+    await testCleanupFailureDoesNotAffectSuccess();
+    console.log('Receipt save flow tests passed');
+  };
 
 run().catch((error) => {
   console.error(error);

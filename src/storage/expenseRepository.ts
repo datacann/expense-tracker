@@ -9,9 +9,19 @@ interface StorageData {
   schemaVersion: number;
 }
 
-export const expenseRepository = {
+export interface ExpenseRepository {
+  getAll(): Promise<Expense[]>;
+  saveAll(expenses: Expense[]): Promise<void>;
+}
+
+export interface ExpenseStorage {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+}
+
+export const createExpenseRepository = (storage: ExpenseStorage): ExpenseRepository => ({
   async getAll(): Promise<Expense[]> {
-    const data = await AsyncStorage.getItem(STORAGE_KEY);
+    const data = await storage.getItem(STORAGE_KEY);
     if (!data) return [];
     const parsed = JSON.parse(data) as StorageData;
     return parsed.expenses;
@@ -22,6 +32,8 @@ export const expenseRepository = {
       expenses,
       schemaVersion: SCHEMA_VERSION,
     };
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    await storage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
-};
+});
+
+export const expenseRepository = createExpenseRepository(AsyncStorage);

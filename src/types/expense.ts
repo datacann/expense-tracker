@@ -13,6 +13,7 @@ export interface Expense {
   currency: 'TRY';
   source: 'manual' | 'receipt' | 'voice';
   items: ExpenseItem[];
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

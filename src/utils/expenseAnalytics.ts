@@ -7,6 +7,32 @@ export interface CategorySummary {
   amountMinor: number;
 }
 
+export interface CategoryDetailItem {
+  expenseId: string;
+  itemId: string;
+  description: string;
+  amountMinor: number;
+  date: string;
+  merchant?: string;
+}
+
+export const getCategoryDetails = (expenses: Expense[], yearMonth: string, categoryId: string): CategoryDetailItem[] => {
+  const details: CategoryDetailItem[] = [];
+  expenses.filter(e => e.date.startsWith(yearMonth)).forEach(e => {
+    e.items.filter(i => i.categoryId === categoryId).forEach(i => {
+      details.push({
+        expenseId: e.id,
+        itemId: i.id,
+        description: i.description,
+        amountMinor: i.amountMinor,
+        date: e.date,
+        merchant: e.merchant,
+      });
+    });
+  });
+  return details;
+};
+
 export const calculateMonthlyStats = (expenses: Expense[], yearMonth: string) => {
   const filtered = expenses.filter(e => e.date.startsWith(yearMonth));
   
@@ -28,4 +54,11 @@ export const calculateMonthlyStats = (expenses: Expense[], yearMonth: string) =>
   }));
 
   return { total, summaries };
+};
+
+export const getPreviousMonth = (yearMonth: string): string => {
+  const [year, month] = yearMonth.split('-').map(Number);
+  const date = new Date(year, month - 1, 1);
+  date.setMonth(date.getMonth() - 1);
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
 };

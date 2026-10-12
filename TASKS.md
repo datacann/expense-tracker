@@ -9,10 +9,11 @@
 ## Uygulanacak Görevler
 - [x] Harcama modeli (tür, tutar, tarih, kategori) tanımlanması.
 - [x] Manuel harcama ekleme formu oluşturulması.
-- [x] Yerel veritabanı (expo-sqlite) entegrasyonu.
+- [x] Yerel depolama (AsyncStorage) entegrasyonu.
 - [x] Harcama listesinin ekrana yansıtılması.
 - [ ] Kamera/Fiş okuma entegrasyonu.
-- [ ] İstatistik ve grafik ekranı.
+- [x] Aylık harcama limiti ve AI tasarruf önerileri (Görev 46–50; cihaz ve gerçek sağlayıcı kontrolü bekliyor).
+- [x] RevenueCat Premium istemci akışı ve sesle ekleme entitlement kapısı (panel/store anahtarları ve development build bekliyor).
 
 ## Fiş Akışı 11–20 Doğrulama (2026-10-02)
 - [x] TypeScript kontrolü ve mevcut yardımcı testler çalıştırıldı.
@@ -36,3 +37,16 @@
 - [x] Geçerli kayıt, geçersiz taslak ve depolama hatası izole testlerle doğrulandı.
 
 Ayrıntılar: `docs/RECEIPT-TEST-REPORT.md`.
+
+## İlk 10 Görev Doğrulaması (2026-10-05)
+- [x] Kod/config incelemesi ve mevcut saf TypeScript testleri çalıştırıldı.
+- [x] Para, yerel tarih ve aylık analiz kritik senaryoları otomatik testlerle doğrulandı.
+- [x] Backend sağlık ve eksik sağlayıcı hata testleri doğrulandı.
+- [x] Expo bağımlılık uyumu: `react-native-get-random-values` SDK 57 ile uyumlu `~1.11.0` sürümüne getirildi.
+- [x] Provider yakın zamanlı mutasyonlarda kayıt kaybına karşı seri yazma kuyruğuyla düzeltildi ve izole depolama testleri eklendi.
+- [x] Manuel hızlı çift gönderim koruması senkron kilitle eklendi ve hata sonrası retry ile test edildi.
+- [x] Manuel forma opsiyonel işletme alanı eklendi; oluşturma/düzenleme/temizleme test edildi.
+- [x] Detay ekranında yükleniyor/hata/bulunamadı ayrıldı; silme hatası ve tekrar silme koruması test edildi.
+- [ ] Fiziksel cihaz akışı doğrulanmalı.
+
+Ayrıntılar: `docs/TEST-REPORT-01-10.md`.
