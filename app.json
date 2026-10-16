@@ -8,7 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.atacan.expensetracker"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.atacan.expensetracker"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,8 +31,8 @@
     ],
     "extra": {
       "API_BASE_URL": "http://192.168.1.73:8001",
-      "REVENUECAT_IOS_API_KEY": "",
-      "REVENUECAT_ANDROID_API_KEY": ""
+      "REVENUECAT_IOS_API_KEY": "appl_OTagbknHQSZoUHnWRAZTAoYNtcd",
+      "REVENUECAT_ANDROID_API_KEY": "goog_EiwihbSshtEWgnspTQAxJUzHFjN"
     }
   }
 }
