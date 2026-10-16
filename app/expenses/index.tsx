@@ -1,10 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, Modal, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useExpense } from '../../src/providers/ExpenseProvider';
 import { ExpenseListItem } from '../../src/components/ExpenseListItem';
 import { COLORS, SPACING, RADIUS } from '../../src/constants/theme';
 import { formatCurrency } from '../../src/utils/money';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CATEGORIES, CATEGORY_IDS } from '../../src/constants/categories';
+
+const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
 export default function ExpensesIndex() {
   const { state, retryLoad } = useExpense();
@@ -15,6 +20,9 @@ export default function ExpensesIndex() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [monthPickerVisible, setMonthPickerVisible] = useState(false);
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
 
   const yearMonth = useMemo(() => {
     const y = currentDate.getFullYear();
@@ -34,9 +42,17 @@ export default function ExpensesIndex() {
         return merchantMatch || itemMatch;
       });
     }
+    if (selectedCategory) list = list.filter((expense) => expense.items.some((item) => item.categoryId === selectedCategory));
 
     return list.sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
-  }, [state.expenses, yearMonth, searchText]);
+  }, [state.expenses, yearMonth, searchText, selectedCategory]);
+
+  const monthOptions = useMemo(() => Array.from({ length: 37 }, (_, index) => {
+    const date = new Date(new Date().getFullYear(), new Date().getMonth() - 24 + index, 1);
+    return date;
+  }).reverse(), []);
+  const categoryOptions = useMemo(() => Object.entries(CATEGORIES).map(([key, label]) => ({ label, value: CATEGORY_IDS[key as keyof typeof CATEGORIES] })), []);
+  const selectedCategoryLabel = categoryOptions.find((item) => item.value === selectedCategory)?.label ?? 'Tüm kategoriler';
 
   const totalMinor = useMemo(() => {
     return filteredExpenses.reduce((sum, e) => 
@@ -69,37 +85,20 @@ export default function ExpensesIndex() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Üst Bar: Arama ve Başlık */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Harcama Geçmişi</Text>
-        <TextInput 
-          style={styles.searchBar} 
-          placeholder="İşletme veya ürün ara..."
-          placeholderTextColor={COLORS.textSecondary}
-          value={searchText}
-          onChangeText={setSearchText}
-        />
+        <Text style={styles.headerTitle}>Geçmiş</Text>
+        <View style={styles.searchWrap}><Ionicons name="search-outline" size={20} color={COLORS.textSecondary} /><TextInput 
+          style={styles.searchBar} placeholder="İşletme veya açıklama ara" placeholderTextColor={COLORS.textSecondary} value={searchText} onChangeText={setSearchText}
+        /></View>
 
         {/* Ay Seçici */}
-        <View style={styles.monthRow}>
-          <TouchableOpacity style={styles.monthNavButton} onPress={() => changeMonth(-1)}>
-            <Text style={styles.monthNavText}>‹</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={setThisMonth}>
-            <Text style={styles.monthText}>{yearMonth}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.monthNavButton} onPress={() => changeMonth(1)}>
-            <Text style={styles.monthNavText}>›</Text>
-          </TouchableOpacity>
+        <View style={styles.filterRow}>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setMonthPickerVisible(true)}><Ionicons name="calendar-outline" size={17} color={COLORS.primary} /><Text style={styles.filterText}>{MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}</Text><Ionicons name="chevron-down" size={17} color={COLORS.text} /></TouchableOpacity>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setCategoryPickerVisible(true)}><Text style={styles.filterText} numberOfLines={1}>{selectedCategoryLabel}</Text><Ionicons name="chevron-down" size={17} color={COLORS.text} /></TouchableOpacity>
         </View>
-
-        {/* Özet Satırı */}
-        <View style={styles.summaryBadge}>
-          <Text style={styles.summaryBadgeText}>
-            {searchText ? 'Eşleşenler' : 'Toplam'}: {filteredExpenses.length} kayıt • {formatCurrency(totalMinor)}
-          </Text>
-        </View>
+        <Text style={styles.resultText}>{filteredExpenses.length} kayıt · {formatCurrency(totalMinor)}</Text>
       </View>
 
       {/* Liste */}
@@ -120,17 +119,15 @@ export default function ExpensesIndex() {
         }
       />
 
-      {/* Yeni Ekle Yüzen Buton (veya alt buton) */}
-      <View style={styles.bottomBar}>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => router.push('/expenses/new')}
-        >
-          <Text style={styles.addButtonText}>+ Yeni Harcama</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <TouchableOpacity style={styles.floatingButton} onPress={() => router.push('/expenses/new')}><Ionicons name="add" size={28} color="#FFFFFF" /></TouchableOpacity>
+      <SelectionModal visible={monthPickerVisible} title="Ay seç" onClose={() => setMonthPickerVisible(false)}>{monthOptions.map((date) => { const selected = date.getFullYear() === currentDate.getFullYear() && date.getMonth() === currentDate.getMonth(); return <TouchableOpacity key={`${date.getFullYear()}-${date.getMonth()}`} style={styles.option} onPress={() => { setCurrentDate(date); setMonthPickerVisible(false); }}><Text style={[styles.optionText, selected && styles.selectedOption]}>{MONTHS[date.getMonth()]} {date.getFullYear()}</Text>{selected && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>; })}</SelectionModal>
+      <SelectionModal visible={categoryPickerVisible} title="Kategori seç" onClose={() => setCategoryPickerVisible(false)}><TouchableOpacity style={styles.option} onPress={() => { setSelectedCategory(null); setCategoryPickerVisible(false); }}><Text style={[styles.optionText, selectedCategory === null && styles.selectedOption]}>Tüm kategoriler</Text>{selectedCategory === null && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>{categoryOptions.map((item) => <TouchableOpacity key={item.value} style={styles.option} onPress={() => { setSelectedCategory(item.value); setCategoryPickerVisible(false); }}><Text style={[styles.optionText, selectedCategory === item.value && styles.selectedOption]}>{item.label}</Text>{selectedCategory === item.value && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>)}</SelectionModal>
+    </SafeAreaView>
   );
+}
+
+function SelectionModal({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+  return <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}><TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose}><View style={styles.sheet} onStartShouldSetResponder={() => true}><View style={styles.sheetHeader}><Text style={styles.sheetTitle}>{title}</Text><TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={COLORS.text} /></TouchableOpacity></View><ScrollView>{children}</ScrollView></View></TouchableOpacity></Modal>;
 }
 
 const styles = StyleSheet.create({
@@ -167,67 +164,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   header: { 
-    padding: SPACING.md, 
-    backgroundColor: COLORS.card, 
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    backgroundColor: COLORS.background,
     borderBottomWidth: 1, 
     borderColor: COLORS.border 
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: SPACING.sm,
   },
+  searchWrap: { height: 48, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, paddingHorizontal: 14, backgroundColor: COLORS.surfaceMuted, flexDirection: 'row', alignItems: 'center' },
   searchBar: { 
-    height: 44,
-    borderWidth: 1, 
-    borderColor: COLORS.border, 
-    borderRadius: RADIUS.md, 
-    paddingHorizontal: SPACING.md, 
-    backgroundColor: COLORS.background,
+    flex: 1,
+    height: 48,
+    paddingHorizontal: SPACING.sm,
     color: COLORS.text,
     fontSize: 14,
-    marginBottom: SPACING.sm,
   },
-  monthRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginVertical: SPACING.xs 
-  },
-  monthNavButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  monthNavText: {
-    fontSize: 20,
-    color: COLORS.primary,
-    fontWeight: 'bold',
-  },
-  monthText: { 
-    fontSize: 16, 
-    fontWeight: 'bold',
-    color: COLORS.text 
-  },
-  summaryBadge: {
-    backgroundColor: COLORS.background,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.sm,
-    alignSelf: 'flex-start',
-    marginTop: SPACING.xs,
-  },
-  summaryBadgeText: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
+  filterRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  filterButton: { flex: 1, height: 44, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, backgroundColor: COLORS.card, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
+  filterText: { color: COLORS.text, fontWeight: '600', fontSize: 13 },
+  resultText: { color: COLORS.textSecondary, fontSize: 11, marginTop: 10 },
   listContent: {
-    padding: SPACING.md,
+    paddingHorizontal: 20,
+    paddingBottom: 90,
   },
   emptyContainer: {
     paddingVertical: 40,
@@ -243,22 +206,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
   },
-  bottomBar: {
-    padding: SPACING.md,
-    backgroundColor: COLORS.card,
-    borderTopWidth: 1,
-    borderColor: COLORS.border,
-  },
-  addButton: {
-    backgroundColor: COLORS.primary,
-    height: 48,
-    borderRadius: RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
+  floatingButton: { position: 'absolute', right: 22, bottom: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' }, sheet: { maxHeight: '72%', backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingBottom: 28 }, sheetHeader: { height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: COLORS.border }, sheetTitle: { color: COLORS.text, fontSize: 19, fontWeight: '800' }, option: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: COLORS.border }, optionText: { color: COLORS.text, fontSize: 15 }, selectedOption: { color: COLORS.primary, fontWeight: '800' },
 });

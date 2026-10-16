@@ -13,9 +13,11 @@ export default function Layout() {
           tabBarStyle: {
             backgroundColor: COLORS.card,
             borderTopColor: COLORS.border,
-            height: 60,
-            paddingBottom: 8,
+            height: 70,
+            paddingBottom: 10,
+            paddingTop: 7,
           },
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.textSecondary,
           headerStyle: {
@@ -31,6 +33,7 @@ export default function Layout() {
           name="index" 
           options={{ 
             title: 'Özet',
+            headerShown: false,
             tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={24} color={color} />
           }} 
         />
@@ -46,6 +49,7 @@ export default function Layout() {
           name="analytics" 
           options={{ 
             title: 'Analiz',
+            headerShown: false,
             tabBarIcon: ({ color }) => <Ionicons name="bar-chart-outline" size={24} color={color} />
           }} 
         />
@@ -53,6 +57,7 @@ export default function Layout() {
           name="settings" 
           options={{ 
             title: 'Ayarlar',
+            headerShown: false,
             tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={24} color={color} />
           }} 
         />
@@ -61,10 +66,12 @@ export default function Layout() {
         <Tabs.Screen name="receipts/analyze" options={{ href: null }} />
         <Tabs.Screen name="receipts/preview" options={{ href: null }} />
         <Tabs.Screen name="expenses/[id]" options={{ href: null }} />
-        <Tabs.Screen name="expenses/new" options={{ href: null }} />
+        <Tabs.Screen name="expenses/new" options={{ href: null, title: 'Yeni harcama' }} />
         <Tabs.Screen name="expenses/category-detail" options={{ href: null }} />
         <Tabs.Screen name="suggestions" options={{ href: null, title: 'Tasarruf Önerileri' }} />
         <Tabs.Screen name="premium" options={{ href: null, title: 'Premium' }} />
+        <Tabs.Screen name="voice/new" options={{ href: null, title: 'Sesle harcama ekle' }} />
+        <Tabs.Screen name="voice/analyze" options={{ href: null, title: 'Ses kaydını kontrol et' }} />
       </Tabs>
     </ExpenseProvider>
     </SubscriptionProvider>

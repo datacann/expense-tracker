@@ -105,7 +105,7 @@ export const ReceiptItemEditor = ({ initialItems, onSave, isSaving, receiptTotal
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  listContent: { padding: SPACING.md },
+  listContent: { paddingVertical: SPACING.sm },
   itemCard: { backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border },
   itemTitle: { color: COLORS.text, fontWeight: 'bold', fontSize: 13, marginBottom: SPACING.sm },
   fieldLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '600', marginBottom: 4, marginTop: SPACING.xs },
@@ -115,12 +115,12 @@ const styles = StyleSheet.create({
   fieldError: { color: COLORS.error, fontSize: 11, marginTop: 4 },
   deleteButton: { alignSelf: 'flex-end', paddingVertical: SPACING.sm, paddingHorizontal: SPACING.xs, minHeight: 36, justifyContent: 'center' },
   deleteButtonText: { color: COLORS.error, fontSize: 12, fontWeight: 'bold' },
-  footer: { padding: SPACING.md, backgroundColor: COLORS.card, borderTopWidth: 1, borderColor: COLORS.border, gap: SPACING.sm },
+  footer: { paddingTop: SPACING.md, gap: SPACING.sm },
   addButton: { height: 44, borderRadius: RADIUS.md, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.primary },
   addButtonText: { color: COLORS.primary, fontWeight: 'bold' },
   saveButton: { height: 48, borderRadius: RADIUS.md, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' },
   saveButtonText: { color: '#FFFFFF', fontWeight: 'bold' },
-  totalCard: { marginHorizontal: SPACING.md, padding: SPACING.md, backgroundColor: COLORS.card, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  totalCard: { padding: SPACING.md, backgroundColor: COLORS.surfaceMuted, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   totalCardWarning: { borderColor: COLORS.error, backgroundColor: '#FFF6F5' },
   totalRight: { alignItems: 'flex-end' },
   totalLabel: { color: COLORS.textSecondary, fontSize: 11 },

@@ -54,7 +54,6 @@ export const ExpenseForm = ({ initialData, onSubmit, isLoading }: Props) => {
           style={styles.input} 
         />
 
-        <Text style={styles.label}>Kategori</Text>
         <CategoryPicker value={categoryId} onValueChange={setCategoryId} />
 
         <Text style={styles.label}>Tarih</Text>

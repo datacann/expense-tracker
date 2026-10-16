@@ -9,6 +9,10 @@ import { COLORS, SPACING, RADIUS } from '../src/constants/theme';
 import { ExpenseListItem } from '../src/components/ExpenseListItem';
 import { calculateBudgetStatus } from '../src/utils/budget';
 import { useSubscription } from '../src/providers/SubscriptionProvider';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
 export default function Index() {
   const { state, setMonthlyLimit, deleteMonthlyLimit } = useExpense();
@@ -19,6 +23,8 @@ export default function Index() {
   const [limitSaving, setLimitSaving] = useState(false);
   
   const currentMonth = formatLocalDate(new Date()).substring(0, 7);
+  const [currentYearNumber, currentMonthNumber] = currentMonth.split('-').map(Number);
+  const currentMonthLabel = `${MONTHS[currentMonthNumber - 1]} ${currentYearNumber}`;
   const prevMonth = getPreviousMonth(currentMonth);
 
   const { total, summaries } = calculateMonthlyStats(state.expenses, currentMonth);
@@ -38,107 +44,41 @@ export default function Index() {
     .slice(0, 3);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Selamlama & Başlık */}
+    <SafeAreaView style={styles.container} edges={['top']}><ScrollView contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.greetingTitle}>Merhaba,</Text>
-        <Text style={styles.greetingSubtitle}>Bu ayki harcamalarını buradan takip edebilirsin.</Text>
+        <Text style={styles.greetingTitle}>{MONTHS[new Date().getMonth()]} {new Date().getFullYear()}</Text>
+        <Ionicons name="chevron-down" size={20} color={COLORS.text} />
       </View>
 
-      {/* Koyu Yeşil Özet Kartı */}
       <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Bu ay harcaman</Text>
+        <Text style={styles.summaryLabel}>Bu ay harcanan</Text>
         <Text style={styles.summaryValue}>{formatCurrency(total)}</Text>
-        
-        {hasPrev && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>
-              Geçen aya göre %{percentChange} {isLess ? 'daha az' : 'daha fazla'}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Limit Kartı */}
-      <View style={styles.limitCard}>
         {monthlyLimit ? (
           <>
-            <Text style={styles.limitLabel}>
-              Harcanan {formatCurrency(total)} · Limit {formatCurrency(monthlyLimit)}{`\n`}
-              {budget && budget.exceededMinor > 0 ? `${formatCurrency(budget.exceededMinor)} aşıldı` : `${formatCurrency(budget?.remainingMinor ?? 0)} kaldı`}
-            </Text>
-            <View style={styles.progressBackground}>
-               <View style={[styles.progressFill, { width: `${budget?.progressPercent ?? 0}%` }]} />
+            <View style={styles.limitNumbers}>
+              <View><Text style={styles.limitCaption}>Limit</Text><Text style={styles.limitValue}>{formatCurrency(monthlyLimit)}</Text></View>
+              <View style={styles.limitRight}><Text style={styles.limitCaption}>Kalan</Text><Text style={styles.limitValue}>{formatCurrency(budget?.remainingMinor ?? 0)}</Text></View>
             </View>
-            <View style={styles.limitActions}>
-              <TouchableOpacity onPress={() => { setLimitInput((monthlyLimit / 100).toFixed(2).replace('.', ',')); setLimitModalVisible(true); }}><Text style={styles.seeAll}>Düzenle</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => Alert.alert('Limiti kaldır', 'Bu aya ait limit kaldırılsın mı?', [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Kaldır', style: 'destructive', onPress: () => void deleteMonthlyLimit(currentMonth).catch(() => Alert.alert('Hata', 'Limit kaldırılamadı.')) }])}><Text style={styles.removeText}>Kaldır</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => { setLimitInput((monthlyLimit / 100).toFixed(2).replace('.', ',')); setLimitModalVisible(true); }}>
+              <View style={styles.budgetProgress}><View style={[styles.budgetProgressFill, { width: `${budget?.progressPercent ?? 0}%` }]} /></View>
+              <Text style={styles.progressText}>%{budget?.progressPercent ?? 0}</Text>
+            </TouchableOpacity>
+            <View style={styles.hiddenActions}>
+              <TouchableOpacity onPress={() => Alert.alert('Limiti kaldır', 'Bu aya ait limit kaldırılsın mı?', [{ text: 'Vazgeç', style: 'cancel' }, { text: 'Kaldır', style: 'destructive', onPress: () => void deleteMonthlyLimit(currentMonth).catch(() => Alert.alert('Hata', 'Limit kaldırılamadı.')) }])}><Text style={styles.removeText}>Limiti kaldır</Text></TouchableOpacity>
             </View>
           </>
         ) : (
           <TouchableOpacity style={styles.setLimitButton} onPress={() => { setLimitInput(''); setLimitModalVisible(true); }}>
-            <Text style={styles.actionButtonText}>Aylık limit belirle</Text>
+            <Text style={styles.setLimitText}>Aylık limit belirle</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* Tasarruf Önerileri Butonu */}
-      {__DEV__ && <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: COLORS.accent, marginTop: SPACING.md }]}
-        onPress={() => router.push({ pathname: '/suggestions', params: { month: currentMonth } })}
-      >
-        <Text style={styles.actionButtonText}>Nereden tasarruf edebilirim?</Text>
-      </TouchableOpacity>}
-
-      {/* Ana Aksiyon Butonları */}
       <View style={styles.actionRow}>
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: COLORS.accent }]}
-          onPress={() => router.push('/expenses/new')}
-        >
-          <Text style={styles.actionButtonText}>+ Harcama ekle</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, { backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border }]}
-          onPress={() => router.push('/receipts/new')}
-        >
-          <Text style={[styles.actionButtonText, { color: COLORS.text }]}>Fiş tara</Text>
-        </TouchableOpacity>
+        <QuickAction icon="add-circle-outline" label="Manuel" onPress={() => router.push('/expenses/new')} />
+        <QuickAction icon="camera-outline" label="Fiş tara" onPress={() => router.push('/receipts/new')} />
+        <QuickAction icon="mic-outline" label="Sesle" premium={!isPremium} disabled={subscriptionLoading} onPress={() => router.push(isPremium ? '/voice/new' : { pathname: '/premium', params: { returnTo: 'voice' } })} />
       </View>
-
-      <TouchableOpacity 
-        style={[styles.actionButton, { backgroundColor: COLORS.primary, marginTop: SPACING.sm }]}
-        onPress={() => router.push(isPremium ? '/voice/new' : { pathname: '/premium', params: { returnTo: 'voice' } })}
-        disabled={subscriptionLoading}
-      >
-        <Text style={[styles.actionButtonText, { color: '#FFFFFF' }]}>🎤 Sesle ekle {!isPremium ? '· Premium' : ''}</Text>
-      </TouchableOpacity>
-
-      {/* Kategorilere Göre Harcama */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Kategorilere göre</Text>
-        <TouchableOpacity onPress={() => router.push('/analytics')}>
-          <Text style={styles.seeAll}>Tümünü gör &gt;</Text>
-        </TouchableOpacity>
-      </View>
-
-      {summaries.slice(0, 4).map((s) => {
-        const percentage = total > 0 ? Math.round((s.amountMinor / total) * 100) : 0;
-        return (
-          <View key={s.categoryId} style={styles.categoryRow}>
-            <Text style={styles.categoryName}>{s.name}</Text>
-            <View style={styles.progressBackground}>
-              <View style={[styles.progressFill, { width: `${percentage}%` }]} />
-            </View>
-            <Text style={styles.categoryAmount}>{formatCurrency(s.amountMinor)}</Text>
-          </View>
-        );
-      })}
-
-      {summaries.length === 0 && (
-        <Text style={styles.emptyText}>Henüz bu aya ait harcama yok.</Text>
-      )}
 
       {/* Son Harcamalar */}
       <View style={[styles.sectionHeader, { marginTop: SPACING.lg }]}>
@@ -155,9 +95,10 @@ export default function Index() {
       {recentExpenses.length === 0 && (
         <Text style={styles.emptyText}>Kayıtlı harcama bulunmuyor.</Text>
       )}
+      {hasPrev && <View style={styles.comparisonRow}><Ionicons name={isLess ? 'trending-down' : 'trending-up'} size={22} color={isLess ? '#087B54' : COLORS.error} /><View><Text style={styles.comparisonCaption}>Geçen aya göre</Text><Text style={[styles.comparisonText, !isLess && { color: COLORS.error }]}>{formatCurrency(Math.abs(diff))} {isLess ? 'daha az' : 'daha fazla'}</Text></View></View>}
       <Modal transparent visible={limitModalVisible} animationType="fade" onRequestClose={() => setLimitModalVisible(false)}>
         <View style={styles.modalBackdrop}><View style={styles.modalCard}>
-          <Text style={styles.sectionTitle}>{currentMonth} aylık limiti</Text>
+          <Text style={styles.sectionTitle}>{currentMonthLabel} aylık limiti</Text>
           <TextInput value={limitInput} onChangeText={setLimitInput} keyboardType="decimal-pad" placeholder="Örn: 10000" style={styles.limitInput} editable={!limitSaving} />
           <View style={styles.limitActions}>
             <TouchableOpacity onPress={() => setLimitModalVisible(false)} disabled={limitSaving}><Text style={styles.seeAll}>Vazgeç</Text></TouchableOpacity>
@@ -165,8 +106,12 @@ export default function Index() {
           </View>
         </View></View>
       </Modal>
-    </ScrollView>
+    </ScrollView></SafeAreaView>
   );
+}
+
+function QuickAction({ icon, label, onPress, premium, disabled }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; premium?: boolean; disabled?: boolean }) {
+  return <TouchableOpacity style={styles.quickAction} onPress={onPress} disabled={disabled}><Ionicons name={icon} size={25} color={COLORS.primaryDark} /><Text style={styles.quickLabel}>{label}</Text>{premium && <Text style={styles.premiumDot}>Premium</Text>}</TouchableOpacity>;
 }
 
 const styles = StyleSheet.create({
@@ -175,86 +120,64 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   content: {
-    padding: SPACING.md,
+    paddingHorizontal: 18,
+    paddingTop: 18,
     paddingBottom: SPACING.xl,
   },
   header: {
-    marginBottom: SPACING.md,
+    marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
   },
   greetingTitle: {
-    fontSize: 24,
+    fontSize: 27,
     fontWeight: 'bold',
     color: COLORS.text,
-  },
-  greetingSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginTop: 4,
   },
   summaryCard: {
     backgroundColor: COLORS.primary,
     borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
+    padding: 22,
+    marginBottom: 14,
+    minHeight: 208,
   },
-  limitCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  limitLabel: {
-    color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: SPACING.sm,
-  },
-  setLimitButton: {
-    padding: SPACING.md,
-    alignItems: 'center',
-  },
+  setLimitButton: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  setLimitText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   summaryLabel: {
-    color: COLORS.accent,
+    color: '#D8EEE5',
     fontSize: 14,
     fontWeight: '500',
   },
   summaryValue: {
     color: '#FFFFFF',
-    fontSize: 32,
+    fontSize: 39,
     fontWeight: 'bold',
     marginVertical: SPACING.sm,
   },
-  badge: {
-    backgroundColor: 'rgba(232, 245, 200, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  badgeText: {
-    color: COLORS.accent,
-    fontSize: 12,
-  },
+  limitNumbers: { flexDirection: 'row', justifyContent: 'space-between', marginTop: SPACING.sm },
+  limitRight: { alignItems: 'flex-end' },
+  limitCaption: { color: '#D8EEE5', fontSize: 13 },
+  limitValue: { color: '#FFFFFF', fontWeight: '700', fontSize: 17, marginTop: 2 },
+  budgetProgress: { height: 14, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 8, marginTop: 16, overflow: 'hidden' },
+  budgetProgressFill: { height: '100%', backgroundColor: COLORS.accentStrong, borderRadius: 8 },
+  progressText: { color: '#D8EEE5', fontSize: 12, textAlign: 'right', marginTop: 4 },
+  hiddenActions: { position: 'absolute', right: 20, top: 14 },
   actionRow: {
     flexDirection: 'row',
     gap: SPACING.sm,
     marginBottom: SPACING.lg,
-    marginTop: SPACING.md,
   },
-  actionButton: {
+  quickAction: {
     flex: 1,
-    height: 48,
-    borderRadius: RADIUS.md,
+    height: 82,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.accent,
   },
-  actionButtonText: {
-    color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
+  quickLabel: { color: COLORS.text, fontWeight: '700', fontSize: 13, marginTop: 5 },
+  premiumDot: { color: COLORS.primary, fontSize: 8, marginTop: 1, fontWeight: '700' },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -270,36 +193,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 12,
   },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    padding: SPACING.sm,
-    borderRadius: RADIUS.sm,
-    marginBottom: 6,
-  },
-  categoryName: {
-    width: 90,
-    fontSize: 12,
-    color: COLORS.text,
-  },
-  progressBackground: {
-    flex: 1,
-    height: 6,
-    backgroundColor: COLORS.background,
-    borderRadius: 3,
-    marginHorizontal: SPACING.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-  },
-  categoryAmount: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
   emptyText: {
     color: COLORS.textSecondary,
     fontSize: 12,
@@ -312,4 +205,7 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: SPACING.lg },
   modalCard: { backgroundColor: COLORS.card, borderRadius: RADIUS.lg, padding: SPACING.lg },
   limitInput: { marginTop: SPACING.md, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, padding: SPACING.sm, color: COLORS.text, fontSize: 20 },
+  comparisonRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  comparisonCaption: { color: COLORS.textSecondary, fontSize: 11 },
+  comparisonText: { color: '#087B54', fontSize: 17, fontWeight: '800' },
 });

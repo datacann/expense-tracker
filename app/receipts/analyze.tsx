@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert, TextInput, ScrollView, TouchableOpacity, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert, TextInput, ScrollView, TouchableOpacity, BackHandler, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useReceiptAnalysis } from '../../src/hooks/useReceiptAnalysis';
 import { useExpense } from '../../src/providers/ExpenseProvider';
@@ -11,6 +11,7 @@ import { toMinorUnits } from '../../src/utils/money';
 import { COLORS, SPACING, RADIUS } from '../../src/constants/theme';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Analyze() {
   const { uri: uriParam } = useLocalSearchParams<{ uri?: string | string[] }>();
@@ -147,19 +148,19 @@ export default function Analyze() {
       
       {data && (
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          <Text style={styles.title}>Fişi Kontrol Et</Text>
-          <Text style={styles.helperText}>Analiz sonucunu kontrol et; yanlış alanları kaydetmeden önce düzeltebilirsin.</Text>
+          <View style={styles.titleRow}><TouchableOpacity style={styles.backButton} onPress={confirmCancel}><Ionicons name="arrow-back" size={25} color={COLORS.text} /></TouchableOpacity><Text style={styles.title}>Fişi kontrol et</Text></View>
+          <View style={styles.receiptIntro}>{uri ? <Image source={{ uri }} style={styles.receiptThumb} resizeMode="cover" /> : null}<Text style={styles.helperText}>Bilgileri kontrol et,{`\n`}gerekirse düzenle.</Text></View>
           {data.warnings.length > 0 && <View style={styles.warningCard}>
             <Text style={styles.warningTitle}>Kontrol edilmesi gerekenler</Text>
             {data.warnings.map((warning, index) => <Text key={`${warning}-${index}`} style={styles.warningText}>• {warning}</Text>)}
           </View>}
           <View style={styles.formCard}>
+            <Text style={styles.label}>Genel toplam</Text>
+            <View style={styles.inputWrap}><TextInput value={total} onChangeText={setTotal} keyboardType="decimal-pad" style={[styles.input, styles.totalInput]} placeholder="0,00 TL" placeholderTextColor={COLORS.textSecondary} /><Ionicons name="pencil-outline" size={19} color={COLORS.primary} /></View>
             <Text style={styles.label}>İşletme</Text>
-            <TextInput value={merchant} onChangeText={setMerchant} style={styles.input} placeholder="İşletme adı" placeholderTextColor={COLORS.textSecondary} />
+            <View style={styles.inputWrap}><TextInput value={merchant} onChangeText={setMerchant} style={styles.input} placeholder="İşletme adı" placeholderTextColor={COLORS.textSecondary} /><Ionicons name="pencil-outline" size={19} color={COLORS.primary} /></View>
             <Text style={styles.label}>Tarih</Text>
-            <TextInput value={date} onChangeText={setDate} style={styles.input} placeholder="YYYY-AA-GG" placeholderTextColor={COLORS.textSecondary} />
-            <Text style={styles.label}>Fiş Toplamı</Text>
-            <TextInput value={total} onChangeText={setTotal} keyboardType="decimal-pad" style={styles.input} placeholder="Toplam" placeholderTextColor={COLORS.textSecondary} />
+            <View style={styles.inputWrap}><TextInput value={date} onChangeText={setDate} style={styles.input} placeholder="YYYY-AA-GG" placeholderTextColor={COLORS.textSecondary} /><Ionicons name="calendar-outline" size={19} color={COLORS.primaryDark} /></View>
           </View>
           
           <Text style={styles.sectionHeader}>Ürünler</Text>
@@ -187,15 +188,21 @@ export default function Analyze() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  scroll: { padding: SPACING.md, paddingBottom: SPACING.xl },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: SPACING.xs, color: COLORS.text },
-  helperText: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 18, marginBottom: SPACING.md },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: SPACING.xl },
+  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 22 },
+  backButton: { width: 42, height: 42, justifyContent: 'center' },
+  title: { fontSize: 26, fontWeight: '800', color: COLORS.text },
+  receiptIntro: { flexDirection: 'row', alignItems: 'center', gap: 18, marginBottom: 18 },
+  receiptThumb: { width: 112, height: 142, borderRadius: 12, backgroundColor: COLORS.surfaceMuted },
+  helperText: { flex: 1, color: COLORS.textSecondary, fontSize: 14, lineHeight: 21 },
   warningCard: { backgroundColor: '#FFF6E5', borderColor: '#E9A23B', borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
   warningTitle: { color: COLORS.text, fontWeight: 'bold', marginBottom: SPACING.xs },
   warningText: { color: COLORS.textSecondary, fontSize: 12, lineHeight: 18 },
-  formCard: { backgroundColor: COLORS.card, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.md },
-  label: { fontSize: 12, fontWeight: 'bold', color: COLORS.textSecondary, marginBottom: 4 },
-  input: { height: 44, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.sm, backgroundColor: COLORS.background, paddingHorizontal: SPACING.sm, marginBottom: SPACING.sm, color: COLORS.text },
+  formCard: { marginBottom: SPACING.md },
+  label: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 5, marginTop: 3 },
+  inputWrap: { height: 50, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, backgroundColor: COLORS.card, paddingRight: 13, marginBottom: 10 },
+  input: { flex: 1, height: 48, paddingHorizontal: 13, color: COLORS.text, fontSize: 15 },
+  totalInput: { fontSize: 22, fontWeight: '800' },
   sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: SPACING.sm, color: COLORS.text },
   error: { color: COLORS.error, marginBottom: SPACING.md, textAlign: 'center' },
   loadingText: { marginTop: SPACING.sm, color: COLORS.textSecondary },

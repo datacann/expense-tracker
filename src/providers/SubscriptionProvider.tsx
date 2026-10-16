@@ -23,14 +23,19 @@ const readableError = (error: unknown) => {
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const apiKey = getPlatformApiKey();
-  const configured = Boolean(apiKey);
+  const isExpoGo = Constants.appOwnership === 'expo';
+  const configured = Boolean(apiKey) && !isExpoGo;
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [loading, setLoading] = useState(configured);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!configured) { setError('RevenueCat platform anahtarı henüz yapılandırılmadı.'); setLoading(false); return; }
+    if (!configured) {
+      setError(isExpoGo ? 'Premium satın alma testi için development build gereklidir.' : 'RevenueCat platform anahtarı henüz yapılandırılmadı.');
+      setLoading(false);
+      return;
+    }
     setLoading(true); setError(null);
     try {
       const [info, offerings] = await Promise.all([Purchases.getCustomerInfo(), Purchases.getOfferings()]);
@@ -38,7 +43,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       if (!offerings.current) setError('RevenueCat üzerinde aktif bir offering bulunamadı.');
     } catch (caught) { setError(readableError(caught) ?? 'Abonelik bilgisi alınamadı.'); }
     finally { setLoading(false); }
-  }, [configured]);
+  }, [configured, isExpoGo]);
 
   useEffect(() => {
     if (!configured) { setLoading(false); return; }
@@ -56,7 +61,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     finally { setLoading(false); }
   };
   const restore = async () => {
-    if (!configured) { setError('RevenueCat platform anahtarı henüz yapılandırılmadı.'); return false; }
+    if (!configured) { setError(isExpoGo ? 'Premium satın alma testi için development build gereklidir.' : 'RevenueCat platform anahtarı henüz yapılandırılmadı.'); return false; }
     setLoading(true); setError(null);
     try { const info = await Purchases.restorePurchases(); setCustomerInfo(info); const active = hasPremiumEntitlement(info); if (!active) setError('Bu mağaza hesabında aktif Premium abonelik bulunamadı.'); return active; }
     catch (caught) { setError(readableError(caught) ?? 'Satın alımlar geri yüklenemedi.'); return false; }
