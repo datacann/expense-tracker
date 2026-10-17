@@ -11,6 +11,7 @@ import { calculateBudgetStatus } from '../src/utils/budget';
 import { useSubscription } from '../src/providers/SubscriptionProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AdBanner } from '../src/components/AdBanner';
 
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
@@ -106,7 +107,7 @@ export default function Index() {
           </View>
         </View></View>
       </Modal>
-    </ScrollView></SafeAreaView>
+    </ScrollView><AdBanner /></SafeAreaView>
   );
 }
 

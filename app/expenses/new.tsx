@@ -7,9 +7,11 @@ import { toMinorUnits } from '../../src/utils/money';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { createSubmissionLock } from '../../src/services/submissionLock';
+import { useAds } from '../../src/providers/AdProvider';
 
 export default function NewExpense() {
   const { addExpense } = useExpense();
+  const { maybeShowInterstitial } = useAds();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const submissionLock = useRef(createSubmissionLock()).current;
@@ -34,6 +36,7 @@ export default function NewExpense() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         });
+        await maybeShowInterstitial();
         router.replace('/expenses');
       } finally {
         setIsLoading(false);

@@ -6,6 +6,11 @@
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#10231F"
+    },
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -48,12 +53,32 @@
           "cameraPermission": "Fiş ve faturalarınızın fotoğrafını çekerek harcama bilgilerini analiz etmek için kameranıza erişim gerekiyor.",
           "photosPermission": "Seçtiğiniz fiş ve fatura fotoğraflarını analiz etmek için fotoğraflarınıza erişim gerekiyor."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#10231F"
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-4858173270247933~7461948738",
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+        }
       ]
     ],
     "extra": {
       "API_BASE_URL": "https://expense-tracker-backend-production-6baf.up.railway.app",
       "REVENUECAT_IOS_API_KEY": "appl_OTagbknHQSZoUHnWRAZTAoYNtcd",
       "REVENUECAT_ANDROID_API_KEY": "goog_EiwihbSshtEWgnspTQAxJUzHFjN",
+      "ADMOB_IOS_BANNER_ID": "ca-app-pub-4858173270247933/4835785391",
+      "ADMOB_IOS_INTERSTITIAL_ID": "ca-app-pub-4858173270247933/2923937924",
+      "ADMOB_ANDROID_BANNER_ID": "",
+      "ADMOB_ANDROID_INTERSTITIAL_ID": "",
       "router": {},
       "eas": {
         "projectId": "0c76f60a-2c61-4e75-8712-a5692c580d95"

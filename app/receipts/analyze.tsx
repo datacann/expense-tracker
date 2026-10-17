@@ -12,12 +12,14 @@ import { COLORS, SPACING, RADIUS } from '../../src/constants/theme';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import { Ionicons } from '@expo/vector-icons';
+import { useAds } from '../../src/providers/AdProvider';
 
 export default function Analyze() {
   const { uri: uriParam } = useLocalSearchParams<{ uri?: string | string[] }>();
   const uri = Array.isArray(uriParam) ? uriParam[0] : uriParam;
   const { data, loading, error, startAnalysis } = useReceiptAnalysis();
   const { addExpense } = useExpense();
+  const { maybeShowInterstitial } = useAds();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [merchant, setMerchant] = useState('');
@@ -84,7 +86,7 @@ export default function Analyze() {
     };
     const result = await saveReceiptAnalysis(draft, {
       addExpense,
-      navigateToExpense: (expenseId) => { router.replace({ pathname: '/expenses/[id]', params: { id: expenseId } }); },
+      navigateToExpense: (expenseId) => { void (async () => { await maybeShowInterstitial(); router.replace({ pathname: '/expenses/[id]', params: { id: expenseId } }); })(); },
       cleanupReceiptFile: cleanupReceiptFile,
       createId: uuidv4,
       now: () => new Date(),

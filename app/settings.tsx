@@ -5,6 +5,7 @@ import { COLORS, RADIUS, SPACING } from '../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { getDeviceCurrency } from '../src/utils/money';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AdBanner } from '../src/components/AdBanner';
 
 export default function Settings() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
       <Text style={styles.currencyNote}>{currency.isFallback ? 'Cihaz bölgesi belirlenemediği için Türk Lirası kullanılıyor.' : `${currency.name}, cihaz bölgen (${currency.region}) üzerinden seçildi.`}</Text>
+      <View style={styles.spacer} /><AdBanner />
     </SafeAreaView>
   );
 }
@@ -44,4 +46,5 @@ const styles = StyleSheet.create({
   subscriptionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md },
   subscriptionHint: { color: COLORS.textSecondary, fontSize: 11, marginTop: 3 },
   currencyNote: { color: COLORS.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 10, paddingHorizontal: 4 },
+  spacer: { flex: 1 },
 });

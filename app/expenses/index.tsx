@@ -8,6 +8,7 @@ import { formatCurrency } from '../../src/utils/money';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORIES, CATEGORY_IDS } from '../../src/constants/categories';
+import { AdBanner } from '../../src/components/AdBanner';
 
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
@@ -48,9 +49,9 @@ export default function ExpensesIndex() {
   }, [state.expenses, yearMonth, searchText, selectedCategory]);
 
   const monthOptions = useMemo(() => Array.from({ length: 37 }, (_, index) => {
-    const date = new Date(new Date().getFullYear(), new Date().getMonth() - 24 + index, 1);
-    return date;
-  }).reverse(), []);
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() - index, 1);
+  }), []);
   const categoryOptions = useMemo(() => Object.entries(CATEGORIES).map(([key, label]) => ({ label, value: CATEGORY_IDS[key as keyof typeof CATEGORIES] })), []);
   const selectedCategoryLabel = categoryOptions.find((item) => item.value === selectedCategory)?.label ?? 'Tüm kategoriler';
 
@@ -122,6 +123,7 @@ export default function ExpensesIndex() {
       <TouchableOpacity style={styles.floatingButton} onPress={() => router.push('/expenses/new')}><Ionicons name="add" size={28} color="#FFFFFF" /></TouchableOpacity>
       <SelectionModal visible={monthPickerVisible} title="Ay seç" onClose={() => setMonthPickerVisible(false)}>{monthOptions.map((date) => { const selected = date.getFullYear() === currentDate.getFullYear() && date.getMonth() === currentDate.getMonth(); return <TouchableOpacity key={`${date.getFullYear()}-${date.getMonth()}`} style={styles.option} onPress={() => { setCurrentDate(date); setMonthPickerVisible(false); }}><Text style={[styles.optionText, selected && styles.selectedOption]}>{MONTHS[date.getMonth()]} {date.getFullYear()}</Text>{selected && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>; })}</SelectionModal>
       <SelectionModal visible={categoryPickerVisible} title="Kategori seç" onClose={() => setCategoryPickerVisible(false)}><TouchableOpacity style={styles.option} onPress={() => { setSelectedCategory(null); setCategoryPickerVisible(false); }}><Text style={[styles.optionText, selectedCategory === null && styles.selectedOption]}>Tüm kategoriler</Text>{selectedCategory === null && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>{categoryOptions.map((item) => <TouchableOpacity key={item.value} style={styles.option} onPress={() => { setSelectedCategory(item.value); setCategoryPickerVisible(false); }}><Text style={[styles.optionText, selectedCategory === item.value && styles.selectedOption]}>{item.label}</Text>{selectedCategory === item.value && <Ionicons name="checkmark-circle" size={21} color={COLORS.primary} />}</TouchableOpacity>)}</SelectionModal>
+      <AdBanner />
     </SafeAreaView>
   );
 }
@@ -206,6 +208,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
   },
-  floatingButton: { position: 'absolute', right: 22, bottom: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  floatingButton: { position: 'absolute', right: 22, bottom: 66, width: 54, height: 54, borderRadius: 27, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' }, sheet: { maxHeight: '72%', backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingBottom: 28 }, sheetHeader: { height: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: COLORS.border }, sheetTitle: { color: COLORS.text, fontSize: 19, fontWeight: '800' }, option: { minHeight: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderColor: COLORS.border }, optionText: { color: COLORS.text, fontSize: 15 }, selectedOption: { color: COLORS.primary, fontWeight: '800' },
 });

@@ -10,6 +10,7 @@ import { COLORS, RADIUS, SPACING } from '../../src/constants/theme';
 import { formatLocalDate } from '../../src/utils/localDate';
 import { cleanupVoiceRecording } from '../../src/services/voiceRecordingFile';
 import { toMinorUnits } from '../../src/utils/money';
+import { useAds } from '../../src/providers/AdProvider';
 
 type VoiceResult = { description: string; amountMinor: number; categoryId: string; transcript?: string };
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
@@ -19,6 +20,7 @@ export default function VoiceAnalyze() {
   const uri = Array.isArray(params.uri) ? params.uri[0] : params.uri;
   const router = useRouter();
   const { addExpense } = useExpense();
+  const { maybeShowInterstitial } = useAds();
   const [result, setResult] = useState<VoiceResult | null>(null);
   const [amountInput, setAmountInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -112,6 +114,7 @@ export default function VoiceAnalyze() {
         updatedAt: now.toISOString(),
       });
       deleteOwnedRecording();
+      await maybeShowInterstitial();
       router.replace('/expenses');
     } catch (saveError) {
       Alert.alert('Kayıt başarısız', saveError instanceof Error ? saveError.message : 'Harcama kaydedilemedi. Lütfen tekrar deneyin.');
