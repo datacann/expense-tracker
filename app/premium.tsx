@@ -17,7 +17,42 @@ export default function Premium() {
     {!configured && <View style={styles.warningCard}><Text style={styles.warningTitle}>Satın alma bu sürümde kullanılamıyor</Text><Text style={styles.note}>RevenueCat anahtarları ekli. Ancak uygulama şu anda Expo Go içinde çalışıyor; App Store paketleri yalnızca telefona yüklenen development build veya TestFlight sürümünde görüntülenebilir.</Text></View>}
     {error && <View style={styles.errorCard}><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={() => void refresh()}><Text style={styles.link}>Tekrar dene</Text></TouchableOpacity></View>}
     {loading && <ActivityIndicator color={COLORS.primary} style={styles.loader} />}
-    {!isPremium && packages.map((item) => <TouchableOpacity key={item.identifier} style={styles.packageCard} disabled={loading} onPress={async () => { const active = await purchase(item); if (active) Alert.alert('Premium aktif', 'Aboneliğin başarıyla etkinleştirildi.', [{ text: 'Devam Et', onPress: continueAfterPurchase }]); }}><View style={styles.packageInfo}><Text style={styles.packageTitle}>{item.product.title}</Text><Text style={styles.packageDescription}>{item.product.description}</Text></View><Text style={styles.price}>{item.product.priceString}</Text></TouchableOpacity>)}
+    {!isPremium && packages.map((item) => {
+      const isYearly = item.packageType === 'ANNUAL' || item.product.identifier.toLowerCase().includes('year');
+      const isMonthly = item.packageType === 'MONTHLY' || item.product.identifier.toLowerCase().includes('month');
+
+      return (
+        <TouchableOpacity
+          key={item.identifier}
+          style={[styles.packageCard, isYearly && { borderColor: COLORS.accent, borderWidth: 2 }]}
+          disabled={loading}
+          onPress={async () => {
+            const active = await purchase(item);
+            if (active) Alert.alert('Premium aktif', 'Aboneliğin başarıyla etkinleştirildi.', [{ text: 'Devam Et', onPress: continueAfterPurchase }]);
+          }}
+        >
+          <View style={styles.packageInfo}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.packageTitle}>{item.product.title}</Text>
+              {isYearly && (
+                <View style={{ backgroundColor: '#FFE59A', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#7A5A00' }}>%40 İNDİRİM</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.packageDescription}>
+              {item.product.description || (isYearly ? 'Yıllık plan ile avantajlı kullanım' : 'Aylık yenilenen tam erişim')}
+            </Text>
+            {isYearly && (
+              <Text style={{ fontSize: 11, color: COLORS.primary, fontWeight: '600', marginTop: 2 }}>
+                En çok tercih edilen • 2 ay bedava
+              </Text>
+            )}
+          </View>
+          <Text style={styles.price}>{item.product.priceString}</Text>
+        </TouchableOpacity>
+      );
+    })}
     {!isPremium && <TouchableOpacity style={styles.restoreButton} disabled={loading} onPress={async () => { const active = await restore(); if (active) Alert.alert('Premium aktif', 'Satın alımın geri yüklendi.'); }}><Text style={styles.restoreText}>Satın Alımları Geri Yükle</Text></TouchableOpacity>}
     <Text style={styles.legal}>Satın alma işlemi Apple App Store veya Google Play hesabın üzerinden gerçekleştirilir.</Text>
   </ScrollView>;
