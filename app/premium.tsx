@@ -7,13 +7,17 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function Premium() {
   const router = useRouter();
-  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const { returnTo, month } = useLocalSearchParams<{ returnTo?: string; month?: string }>();
   const { configured, loading, isPremium, packages, error, purchase, restore, refresh } = useSubscription();
-  const continueAfterPurchase = () => returnTo === 'voice' ? router.replace('/voice/new') : router.back();
+  const continueAfterPurchase = () => {
+    if (returnTo === 'voice') return router.replace('/voice/new');
+    if (returnTo === 'suggestions') return router.replace({ pathname: '/suggestions', params: { month: month ?? '' } });
+    router.back();
+  };
   return <ScrollView style={styles.container} contentContainerStyle={styles.content}>
     <View style={styles.hero}><View style={styles.heroIcon}><Ionicons name="sparkles" size={26} color="#7A5A00" /></View><Text style={styles.badge}>PREMIUM</Text><Text style={styles.title}>Harcamalarını saniyeler içinde kaydet</Text><Text style={styles.subtitle}>Daha az uğraş, bütçene daha çok odaklan.</Text></View>
-    <View style={styles.card}><Feature icon="mic-outline" title="Sesle hızlı ekleme" text="Tutarı ve açıklamayı söyle; kaydın hazır olsun." /><Feature icon="bulb-outline" title="Kişisel tasarruf önerileri" text="Harcama alışkanlıklarına göre uygulanabilir öneriler al." /><Feature icon="refresh-outline" title="Tüm cihazlarında geri yükle" text="Üyeliğini App Store hesabınla kolayca geri getir." /><Text style={styles.note}>Kesin fiyat ve abonelik dönemi App Store ödeme ekranında gösterilir.</Text></View>
-    {isPremium && <View style={styles.successCard}><Text style={styles.successTitle}>Premium aktif</Text><Text style={styles.note}>Sesle ekleme özelliğini kullanabilirsin.</Text><TouchableOpacity style={styles.primaryButton} onPress={continueAfterPurchase}><Text style={styles.primaryText}>Devam Et</Text></TouchableOpacity></View>}
+    <View style={styles.card}><Feature icon="mic-outline" title="Sesle hızlı ekleme" text="Tutarı ve açıklamayı söyle; kaydın hazır olsun." /><Feature icon="bulb-outline" title="Kişisel tasarruf önerileri" text="Harcama alışkanlıklarına göre uygulanabilir öneriler al." /><Feature icon="ban-outline" title="Reklamsız kullanım" text="Banner ve geçiş reklamları olmadan bütçene odaklan." /><Feature icon="refresh-outline" title="Tüm cihazlarında geri yükle" text="Üyeliğini App Store hesabınla kolayca geri getir." /><Text style={styles.note}>Kesin fiyat ve abonelik dönemi App Store ödeme ekranında gösterilir.</Text></View>
+    {isPremium && <View style={styles.successCard}><Text style={styles.successTitle}>Premium aktif</Text><Text style={styles.note}>Sesle ekleme, kişisel tasarruf önerileri ve reklamsız kullanım aktif.</Text><TouchableOpacity style={styles.primaryButton} onPress={continueAfterPurchase}><Text style={styles.primaryText}>Devam Et</Text></TouchableOpacity></View>}
     {!configured && <View style={styles.warningCard}><Text style={styles.warningTitle}>Satın alma bu sürümde kullanılamıyor</Text><Text style={styles.note}>RevenueCat anahtarları ekli. Ancak uygulama şu anda Expo Go içinde çalışıyor; App Store paketleri yalnızca telefona yüklenen development build veya TestFlight sürümünde görüntülenebilir.</Text></View>}
     {error && <View style={styles.errorCard}><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={() => void refresh()}><Text style={styles.link}>Tekrar dene</Text></TouchableOpacity></View>}
     {loading && <ActivityIndicator color={COLORS.primary} style={styles.loader} />}

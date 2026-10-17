@@ -13,7 +13,7 @@
     },
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.atacan.expensetracker",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -73,6 +73,7 @@
     ],
     "extra": {
       "API_BASE_URL": "https://expense-tracker-backend-production-6baf.up.railway.app",
+      "VOICE_ACCESS_TEST_MODE": false,
       "REVENUECAT_IOS_API_KEY": "appl_OTagbknHQSZoUHnWRAZTAoYNtcd",
       "REVENUECAT_ANDROID_API_KEY": "goog_EiwihbSshtEWgnspTQAxJUzHFjN",
       "ADMOB_IOS_BANNER_ID": "ca-app-pub-4858173270247933/4835785391",

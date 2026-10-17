@@ -13,17 +13,20 @@ import { File } from 'expo-file-system';
 import { COLORS, SPACING } from '../../src/constants/theme';
 import { copyVoiceRecording } from '../../src/services/voiceRecordingFile';
 import { useSubscription } from '../../src/providers/SubscriptionProvider';
+import Constants from 'expo-constants';
 
 export default function VoiceRecord() {
   const router = useRouter();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const voiceTestMode = Constants.expoConfig?.extra?.VOICE_ACCESS_TEST_MODE === true;
+  const canUseVoice = isPremium || voiceTestMode;
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 250);
   const stoppingRef = useRef(false);
 
   useEffect(() => {
-    if (!subscriptionLoading && !isPremium) router.replace({ pathname: '/premium', params: { returnTo: 'voice' } });
-  }, [isPremium, subscriptionLoading, router]);
+    if (!subscriptionLoading && !canUseVoice) router.replace({ pathname: '/premium', params: { returnTo: 'voice' } });
+  }, [canUseVoice, subscriptionLoading, router]);
 
   const stopRecording = async (cancel = false) => {
     if (!recorderState.isRecording || stoppingRef.current) return;
@@ -89,7 +92,7 @@ export default function VoiceRecord() {
 
   const durationSec = Math.min(30, Math.floor(recorderState.durationMillis / 1000));
 
-  if (subscriptionLoading || !isPremium) return <View style={styles.container}><View style={styles.centerBox}><Text style={styles.subtitle}>Premium erişimi kontrol ediliyor…</Text></View></View>;
+  if ((!voiceTestMode && subscriptionLoading) || !canUseVoice) return <View style={styles.container}><View style={styles.centerBox}><Text style={styles.subtitle}>Premium erişimi kontrol ediliyor…</Text></View></View>;
 
   return (
     <View style={styles.container}>

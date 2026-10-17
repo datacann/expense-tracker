@@ -9,6 +9,7 @@ import { COLORS, RADIUS, SPACING } from '../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdBanner } from '../src/components/AdBanner';
+import { useSubscription } from '../src/providers/SubscriptionProvider';
 
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const BAR_COLORS = ['#07865E', '#E8B13F', '#4285EA', '#8B50D9', '#9CA8B5'];
@@ -16,6 +17,7 @@ const BAR_COLORS = ['#07865E', '#E8B13F', '#4285EA', '#8B50D9', '#9CA8B5'];
 export default function Analytics() {
   const router = useRouter();
   const { state } = useExpense();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const [currentMonth, setCurrentMonth] = useState(() => formatLocalDate(new Date()).substring(0, 7));
   
   const stats = calculateMonthlyStats(state.expenses, currentMonth);
@@ -53,7 +55,13 @@ export default function Analytics() {
       ))}
       </View>
       {stats.summaries.length === 0 && <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Bu ay veri yok</Text><Text style={styles.center}>Harcama eklediğinde kategori dağılımı burada görünecek.</Text></View>}
-      <TouchableOpacity style={styles.suggestionButton} onPress={() => router.push({ pathname: '/suggestions', params: { month: currentMonth } })}>
+      <TouchableOpacity
+        style={styles.suggestionButton}
+        disabled={subscriptionLoading}
+        onPress={() => router.push(isPremium
+          ? { pathname: '/suggestions', params: { month: currentMonth } }
+          : { pathname: '/premium', params: { returnTo: 'suggestions', month: currentMonth } })}
+      >
         <View style={styles.suggestionTitleRow}><Ionicons name="stats-chart" size={23} color={COLORS.primary} /><Text style={styles.suggestionText}>Nereden tasarruf edebilirim?</Text><Text style={styles.premiumBadge}>Premium</Text></View>
         <Text style={styles.suggestionCaption}>Harcamalarına göre kişisel öneriler keşfet.</Text>
         <View style={styles.suggestionCta}><Text style={styles.suggestionCtaText}>Önerileri gör</Text></View>

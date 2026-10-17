@@ -34,8 +34,9 @@ const handlePermissionDenied = async (permissionName: string) => {
 export const pickImage = async (useCamera: boolean): Promise<string | null> => {
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [3, 4],
+    // Sistem kırpma ekranı uzun fişlerin üstünü/altını kesebiliyor.
+    // Orijinal kadrajı koru; yalnızca yükleme öncesi boyutlandırma uygulanır.
+    allowsEditing: false,
     quality: 0.8,
   };
 

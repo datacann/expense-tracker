@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useExpense } from '../src/providers/ExpenseProvider';
 import { limitRepository } from '../src/storage/limitRepository';
 import { buildSavingsSummary, requestSavingsSuggestions, savingsSnapshotKey, SuggestionResponse } from '../src/services/savingsSuggestions';
 import { formatCurrency, toMinorUnits } from '../src/utils/money';
 import { COLORS, RADIUS, SPACING } from '../src/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useSubscription } from '../src/providers/SubscriptionProvider';
 
 export default function Suggestions() {
   const { month = '' } = useLocalSearchParams<{ month?: string }>();
+  const router = useRouter();
+  const { isPremium, loading: subscriptionLoading } = useSubscription();
   const { state, setMonthlyLimit } = useExpense();
   const [limit, setLimit] = useState<number | null>(null);
   const [result, setResult] = useState<SuggestionResponse | null>(null);
@@ -21,6 +24,11 @@ export default function Suggestions() {
   const requestRef = useRef<AbortController | null>(null);
 
   useEffect(() => { void limitRepository.getLimit(month).then((value) => { setLimit(value); setLimitInput(value ? String(value / 100).replace('.', ',') : ''); }).catch(() => setError('Aylık limit okunamadı.')); }, [month]);
+  useEffect(() => {
+    if (!subscriptionLoading && !isPremium) {
+      router.replace({ pathname: '/premium', params: { returnTo: 'suggestions', month } });
+    }
+  }, [isPremium, month, router, subscriptionLoading]);
   useEffect(() => () => requestRef.current?.abort(), []);
   const summary = useMemo(() => buildSavingsSummary(state.expenses, month, limit), [state.expenses, month, limit]);
   const currentKey = savingsSnapshotKey(summary);
@@ -34,6 +42,10 @@ export default function Suggestions() {
     catch (caught) { if (!(caught instanceof Error && caught.name === 'AbortError')) { const message = caught instanceof Error ? caught.message : ''; setError(message.includes('timed out') || message.includes('fetch failed') || message.includes('Network') ? 'Öneri servisine şu anda ulaşılamıyor. Bağlantını kontrol edip tekrar dene.' : message || 'Öneriler alınamadı.'); } }
     finally { if (requestRef.current === controller) { requestRef.current = null; setLoading(false); } }
   };
+
+  if (subscriptionLoading || !isPremium) {
+    return <View style={styles.gateLoading}><ActivityIndicator color={COLORS.primary} /><Text style={styles.notice}>Premium erişimi kontrol ediliyor…</Text></View>;
+  }
 
   return <ScrollView style={styles.container} contentContainerStyle={styles.content}>
     <View style={styles.titleRow}><View style={styles.titleIcon}><Ionicons name="sparkles" size={23} color={COLORS.primary} /></View><View><Text style={styles.title}>Tasarruf önerileri</Text><Text style={styles.month}>{month}</Text></View></View>
@@ -54,6 +66,7 @@ export default function Suggestions() {
 }
 
 const styles = StyleSheet.create({
+  gateLoading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background },
   container: { flex: 1, backgroundColor: COLORS.background }, content: { padding: 20, paddingBottom: 40 },
   titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 }, titleIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginRight: 12 }, title: { fontSize: 24, fontWeight: '800', color: COLORS.text }, month: { color: COLORS.textSecondary, fontSize: 12, marginTop: 2 },
   summary: { backgroundColor: COLORS.card, padding: 18, borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border }, summaryLabel: { color: COLORS.textSecondary, fontSize: 12 }, summaryValue: { color: COLORS.text, fontSize: 28, fontWeight: '800', marginTop: 3 }, divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 15 }, limitTitle: { color: COLORS.text, fontSize: 14, fontWeight: '700', marginBottom: 8 }, limitRow: { flexDirection: 'row', gap: 8 }, limitInput: { flex: 1, height: 44, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, color: COLORS.text, backgroundColor: COLORS.surfaceMuted }, limitButton: { height: 44, minWidth: 86, backgroundColor: COLORS.primary, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }, limitButtonText: { color: '#FFFFFF', fontWeight: '700' }, activeLimit: { color: COLORS.primary, fontSize: 11, marginTop: 7, fontWeight: '600' },

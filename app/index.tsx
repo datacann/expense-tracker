@@ -12,6 +12,7 @@ import { useSubscription } from '../src/providers/SubscriptionProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdBanner } from '../src/components/AdBanner';
+import Constants from 'expo-constants';
 
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
@@ -19,6 +20,8 @@ export default function Index() {
   const { state, setMonthlyLimit, deleteMonthlyLimit } = useExpense();
   const router = useRouter();
   const { isPremium, loading: subscriptionLoading } = useSubscription();
+  const voiceTestMode = Constants.expoConfig?.extra?.VOICE_ACCESS_TEST_MODE === true;
+  const canUseVoice = isPremium || voiceTestMode;
   const [limitModalVisible, setLimitModalVisible] = useState(false);
   const [limitInput, setLimitInput] = useState('');
   const [limitSaving, setLimitSaving] = useState(false);
@@ -78,7 +81,7 @@ export default function Index() {
       <View style={styles.actionRow}>
         <QuickAction icon="add-circle-outline" label="Manuel" onPress={() => router.push('/expenses/new')} />
         <QuickAction icon="camera-outline" label="Fiş tara" onPress={() => router.push('/receipts/new')} />
-        <QuickAction icon="mic-outline" label="Sesle" premium={!isPremium} disabled={subscriptionLoading} onPress={() => router.push(isPremium ? '/voice/new' : { pathname: '/premium', params: { returnTo: 'voice' } })} />
+        <QuickAction icon="mic-outline" label="Sesle" premium={!canUseVoice} disabled={!voiceTestMode && subscriptionLoading} onPress={() => router.push(canUseVoice ? '/voice/new' : { pathname: '/premium', params: { returnTo: 'voice' } })} />
       </View>
 
       {/* Son Harcamalar */}
