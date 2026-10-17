@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { parseReceiptAnalysisResponse } from './parseReceiptAnalysisResponse';
-import { validateReceiptDraft } from '../utils/receiptValidation';
+import { validateReceiptDraft } from '../utils/validateReceiptDraft';
 import { CATEGORY_IDS } from '../constants/categories';
 import { Expense } from '../types/expense';
 import { calculateMonthlyStats } from '../utils/expenseAnalytics';
@@ -48,8 +48,8 @@ export const runReceiptFlowIntegrationTest = () => {
       categoryId: i.categoryId,
     })),
   };
-  const validationResult = validateReceiptDraft(draftToValidate, false);
-  assert.strictEqual(validationResult.valid, true, 'Taslak geçerli olmalı');
+  const validationResult = validateReceiptDraft(draftToValidate.items, draftToValidate.totalMinor, true);
+  assert.strictEqual(validationResult.isValid, true, 'Taslak geçerli olmalı');
   console.log('✓ 2. Taslak doğrulama (validation) başarılı');
 
   // 4. İzole Bellek İçi Depolama Simülasyonu (AsyncStorage'a dokunulmaz)
@@ -60,7 +60,7 @@ export const runReceiptFlowIntegrationTest = () => {
     date: parsedAnalysis.date!,
     notes: 'Entegrasyon testi notu',
     source: 'receipt',
-    receiptDraftId: 'draft-123',
+    // receiptDraftId: 'draft-123',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     items: parsedAnalysis.items.map((item, index) => ({

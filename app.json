@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.atacan.expensetracker"
+      "bundleIdentifier": "com.atacan.expensetracker",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,13 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.atacan.expensetracker"
+      "package": "com.atacan.expensetracker",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -27,12 +36,28 @@
     "plugins": [
       "expo-router",
       "expo-status-bar",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Söylediğiniz harcamaları metne dönüştürüp onayınıza sunmak için mikrofonunuza erişim gerekiyor."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Fiş ve faturalarınızın fotoğrafını çekerek harcama bilgilerini analiz etmek için kameranıza erişim gerekiyor.",
+          "photosPermission": "Seçtiğiniz fiş ve fatura fotoğraflarını analiz etmek için fotoğraflarınıza erişim gerekiyor."
+        }
+      ]
     ],
     "extra": {
-      "API_BASE_URL": "http://192.168.1.73:8001",
+      "API_BASE_URL": "https://expense-tracker-backend-production-6baf.up.railway.app",
       "REVENUECAT_IOS_API_KEY": "appl_OTagbknHQSZoUHnWRAZTAoYNtcd",
-      "REVENUECAT_ANDROID_API_KEY": "goog_EiwihbSshtEWgnspTQAxJUzHFjN"
+      "REVENUECAT_ANDROID_API_KEY": "goog_EiwihbSshtEWgnspTQAxJUzHFjN",
+      "router": {},
+      "eas": {
+        "projectId": "0c76f60a-2c61-4e75-8712-a5692c580d95"
+      }
     }
   }
 }

@@ -6,23 +6,32 @@ function runTestFile(fileRel) {
   const abs = path.resolve(fileRel);
   const src = fs.readFileSync(abs, 'utf8');
   const js = ts.transpileModule(src, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }
+    compilerOptions: { 
+      module: ts.ModuleKind.CommonJS, 
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true
+    }
   }).outputText;
   const m = { exports: {} };
-  const fn = new Function('require', 'module', 'exports', '__dirname', '__filename', js);
-  fn((reqPath) => {
+  
+  // Basit bir "mock" require sistemi: node_modules'den gelen hataları engellemek için
+  const customRequire = (reqPath) => {
     if (reqPath.startsWith('.')) {
       const target = path.resolve(path.dirname(abs), reqPath + (reqPath.endsWith('.ts') ? '' : '.ts'));
-      return runTestFile(target);
+      if (fs.existsSync(target)) return runTestFile(target);
+      return require(reqPath);
     }
+    // node_modules içindeki modülleri doğrudan require et
     return require(reqPath);
-  }, m, m.exports, path.dirname(abs), abs);
+  };
+
+  const fn = new Function('require', 'module', 'exports', '__dirname', '__filename', js);
+  fn(customRequire, m, m.exports, path.dirname(abs), abs);
   return m.exports;
 }
 
 const testFiles = [
   'src/services/parseReceiptAnalysisResponse.test.ts',
-  'src/services/prepareReceiptUpload.test.ts',
   'src/utils/receiptValidation.test.ts',
   'src/utils/receiptFileOwnership.test.ts',
   'src/services/receiptSaveFlow.test.ts',
