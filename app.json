@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Moniva",
-    "slug": "moniva",
+    "slug": "expense-tracker",
     "scheme": "moniva",
     "version": "1.0.2",
     "orientation": "portrait",
