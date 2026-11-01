@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSubscription } from '../src/providers/SubscriptionProvider';
 import { COLORS, RADIUS, SPACING } from '../src/constants/theme';
@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getDeviceCurrency } from '../src/utils/money';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AdBanner } from '../src/components/AdBanner';
+import { PRIVACY_POLICY_URL, TERMS_OF_USE_URL } from '../src/constants/legal';
+import { openExternalLink } from '../src/services/openExternalLink';
 
 export default function Settings() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function Settings() {
   const currency = getDeviceCurrency();
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Ayarlar</Text>
       <Text style={styles.sectionLabel}>GENEL</Text>
       <View style={styles.card}>
@@ -26,13 +29,21 @@ export default function Settings() {
         </TouchableOpacity>
       </View>
       <Text style={styles.currencyNote}>{currency.isFallback ? 'Cihaz bölgesi belirlenemediği için Türk Lirası kullanılıyor.' : `${currency.name}, cihaz bölgen (${currency.region}) üzerinden seçildi.`}</Text>
-      <View style={styles.spacer} /><AdBanner />
+      <Text style={styles.sectionLabel}>HAKKINDA</Text>
+      <View style={styles.card}>
+        <TouchableOpacity accessibilityRole="link" style={styles.legalRow} onPress={() => void openExternalLink(PRIVACY_POLICY_URL, 'Gizlilik Politikası')}><Text style={styles.rowTitle}>Gizlilik Politikası</Text><Ionicons name="open-outline" size={19} color={COLORS.primary} /></TouchableOpacity>
+        <View style={styles.rowDivider} />
+        <TouchableOpacity accessibilityRole="link" style={styles.legalRow} onPress={() => void openExternalLink(TERMS_OF_USE_URL, 'Kullanım Koşulları')}><Text style={styles.rowTitle}>Kullanım Koşulları (EULA)</Text><Ionicons name="open-outline" size={19} color={COLORS.primary} /></TouchableOpacity>
+      </View>
+      </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 20, paddingTop: SPACING.lg },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { paddingHorizontal: 20, paddingTop: SPACING.lg, paddingBottom: SPACING.xl },
   pageTitle: { color: COLORS.text, fontSize: 28, fontWeight: '800', marginBottom: SPACING.lg },
   sectionLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: SPACING.sm, marginTop: SPACING.sm },
   card: { backgroundColor: COLORS.card, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: SPACING.md },
@@ -46,5 +57,6 @@ const styles = StyleSheet.create({
   subscriptionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md },
   subscriptionHint: { color: COLORS.textSecondary, fontSize: 11, marginTop: 3 },
   currencyNote: { color: COLORS.textSecondary, fontSize: 11, lineHeight: 16, marginTop: 10, paddingHorizontal: 4 },
-  spacer: { flex: 1 },
+  legalRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  rowDivider: { height: 1, backgroundColor: COLORS.border },
 });

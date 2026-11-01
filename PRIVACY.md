@@ -1,6 +1,6 @@
 Gizlilik Politikası
 Son Güncelleme: 17 Ekim 2026
-"Harcama Takibim" uygulaması, kişisel verilerinizin gizliliğine büyük önem verir. Bu gizlilik politikası, uygulamamızı nasıl kullandığınızı ve verilerinizin nasıl yönetildiğini açıklar.
+"Moniva" uygulaması, kişisel verilerinizin gizliliğine büyük önem verir. Bu gizlilik politikası, uygulamamızı nasıl kullandığınızı ve verilerinizin nasıl yönetildiğini açıklar.
 1. Veri Toplama
 Uygulamamız, harcama verilerinizi (fiş bilgileri, sesli harcama kayıtları vb.) cihazınızda yerel olarak saklar. 
 - Bulut Senkronizasyonu Yoktur: Verileriniz bizim sunucularımıza gönderilmez veya bizim tarafımızdan kaydedilmez.
